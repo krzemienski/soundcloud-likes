@@ -77,9 +77,8 @@ def main(username):
             logger.info('Downloading {} of {} songs'.format(idx, len(to_download)))
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 try:
-                    print(permalink)
-                    # youtube_dl.downloader()
-                    subprocess.call('cd tracks; youtube-dl %s; cd -' % permalink, shell=True)                             
+                    print(permalink)                    
+                    subprocess.call('cd tracks; youtube-dl %s; cd -' % permalink, shell=True)                         
                     successful_urls.append(permalink)
                 except Exception as e:
                     # first 18 chars are ERROR displayed in red

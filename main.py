@@ -6,6 +6,7 @@ import logging
 import requests
 import sys
 import youtube_dl
+import subprocess
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='log.log', format='%(levelname)s - %(message)s', level=logging.INFO)
@@ -13,7 +14,7 @@ ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
-CLIENT_ID = '2t9loNQH90kzJcsFCODdigxfp325aq4z'
+CLIENT_ID = 'f6728a88c45cace665791f8e246347a2'
 REPEATABLE_PARAMS = '&app_version=1478268854&client_id=' + CLIENT_ID
 SEED_URL = 'https://api-v2.soundcloud.com/users/{user_id}/likes?offset=0&limit=100'
 
@@ -49,6 +50,7 @@ def main(username):
     to_download = []
     url = SEED_URL.format(user_id=user_id)
     while True:
+        print((url + REPEATABLE_PARAMS))
         payload = json.loads(requests.get(url + REPEATABLE_PARAMS).content.decode('utf-8'))
         for like_json in payload['collection']:
             if 'track' in like_json:
@@ -75,7 +77,9 @@ def main(username):
             logger.info('Downloading {} of {} songs'.format(idx, len(to_download)))
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 try:
-                    ydl.download([permalink])
+                    print(permalink)
+                    # youtube_dl.downloader()
+                    subprocess.call('cd tracks; youtube-dl %s; cd -' % permalink, shell=True)                             
                     successful_urls.append(permalink)
                 except Exception as e:
                     # first 18 chars are ERROR displayed in red

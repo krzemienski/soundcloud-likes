@@ -7,6 +7,7 @@ import requests
 import sys
 import youtube_dl
 import subprocess
+import random
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='log.log', format='%(levelname)s - %(message)s', level=logging.INFO)
@@ -50,7 +51,7 @@ def main(username):
     to_download = []
     url = SEED_URL.format(user_id=user_id)
     while True:
-        print((url + REPEATABLE_PARAMS))
+        #print((url + REPEATABLE_PARAMS))
         payload = json.loads(requests.get(url + REPEATABLE_PARAMS).content.decode('utf-8'))
         for like_json in payload['collection']:
             if 'track' in like_json:
@@ -72,22 +73,30 @@ def main(username):
     else:
         successful_urls = []
         unsuccessful_urls = []
-        ydl_opts = {'outtmpl': './songs/%(uploader)s - %(title)s (%(id)s).%(ext)s'}
-        for idx, permalink in enumerate(to_download, start=1):
-            logger.info('Downloading {} of {} songs'.format(idx, len(to_download)))
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                try:
-                    print(permalink)                    
-                    subprocess.call('cd tracks; youtube-dl %s; cd -' % permalink, shell=True)                         
-                    successful_urls.append(permalink)
-                except Exception as e:
-                    # first 18 chars are ERROR displayed in red
-                    unsuccessful_urls.append((str(e)[18:], permalink))
+        ydl_opts = {'outtmpl': './songs/%(uploader)s - %(title)s.%(ext)s'}
+        
+        random.shuffle(to_download)
 
-        log_mode = 'a' if os.path.exists('./downloaded.txt') else 'w+'
-        with open('./downloaded.txt', log_mode) as already_downloaded_log:
-            for url in successful_urls:
-                already_downloaded_log.write("{}\n".format(url))
+        for idx, permalink in enumerate(to_download, start=1):
+            logger.info('Downloading {} of {} songs with url {}'.format(idx, len(to_download), permalink))
+            if os.path.exists('./downloaded.txt'):
+                with open('./downloaded.txt') as links:
+                    downloaded = set(links.read().splitlines())
+            if permalink not in downloaded:
+                with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                    try:                                                        
+                        subprocess.run('cd ~/Music/Soundcloud/Likes && youtube-dl %s' % permalink, shell=True)                                           
+                        successful_urls.append(permalink)                    
+                        log_mode = 'a' if os.path.exists('./downloaded.txt') else 'w+'
+                        with open('./downloaded.txt', log_mode) as already_downloaded_log:
+                            already_downloaded_log.write("{}\n".format(permalink))
+                    except Exception as e:
+                        # first 18 chars are ERROR displayed in red
+                        unsuccessful_urls.append((str(e)[18:], permalink))
+            else:
+                log_mode = 'a' if os.path.exists('./downloaded.txt') else 'w+'
+                with open('./downloaded.txt', log_mode) as already_downloaded_log:
+                    already_downloaded_log.write("{}\n".format(permalink))
 
         if unsuccessful_urls:
             errors_log_exists = os.path.exists('./errors.txt')
